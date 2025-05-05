@@ -1,8 +1,10 @@
-#include "mutex.hpp"
+#include "mutex_locker.hpp"
+
+namespace tsa_example {
 
 class BankAccount {
 private:
-  Mutex mu;
+  tsa::Mutex mu;
   int balance GUARDED_BY(mu);
 
   void depositImpl(int amount);
@@ -14,3 +16,5 @@ public:
 
   void transferFrom(BankAccount &b, int amount);
 };
+
+} // namespace tsa_example

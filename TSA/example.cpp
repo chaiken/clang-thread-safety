@@ -1,5 +1,7 @@
 #include "example.hpp"
 
+namespace tsa_example {
+
 void BankAccount::depositImpl(int amount) {
   balance += amount; // WARNING! Cannot write balance without locking mu.
 }
@@ -20,3 +22,5 @@ void BankAccount::transferFrom(BankAccount &b, int amount) {
   depositImpl(amount); // OK.  depositImpl() has no requirements.
   mu.Unlock();
 }
+
+} // namespace tsa_example

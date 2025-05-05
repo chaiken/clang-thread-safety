@@ -4,9 +4,8 @@
 #define THREAD_SAFETY_ANALYSIS_MUTEX_H
 // Enable thread safety attributes only with clang.
 // The attributes can be safely erased when compiling with other compilers.
-#if defined(__clang__) && (!defined(SWIG))
-#define THREAD_ANNOTATION_ATTRIBUTE__(x)
-__attribute__((x))
+#if defined(__clang__)
+#define THREAD_ANNOTATION_ATTRIBUTE__(x)__attribute__((x))
 #else
 #define THREAD_ANNOTATION_ATTRIBUTE__(x)
 // no-op

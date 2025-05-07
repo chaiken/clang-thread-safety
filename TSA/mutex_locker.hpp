@@ -24,16 +24,6 @@ public:
   // Assume mu is held, implicitly acquire *this and associate it with mu.
   MutexLocker(tsa::Mutex *mu, adopt_lock_t) REQUIRES(mu)
       : mut(mu), locked(true) {}
-  // Acquire mu in shared mode, implicitly acquire *this and associate it with
-  // mu.
-  MutexLocker(tsa::Mutex *mu, shared_lock_t) ACQUIRE_SHARED(mu)
-      : mut(mu), locked(true) {
-    mu->ReaderLock();
-  }
-  // Assume mu is held in shared mode, implicitly acquire *this and associate it
-  // with mu.
-  MutexLocker(tsa::Mutex *mu, adopt_lock_t, shared_lock_t) REQUIRES_SHARED(mu)
-      : mut(mu), locked(true) {}
   // Assume mu is not held, implicitly acquire *this and associate it with mu.
   MutexLocker(tsa::Mutex *mu, defer_lock_t) EXCLUDES(mu)
       : mut(mu), locked(false) {}
@@ -44,12 +34,6 @@ public:
   static MutexLocker Adopt(tsa::Mutex *mu) REQUIRES(mu) {
     return MutexLocker(mu, adopt_lock);
   }
-  static MutexLocker ReaderLock(tsa::Mutex *mu) ACQUIRE_SHARED(mu) {
-    return MutexLocker(mu, shared_lock);
-  }
-  static MutexLocker AdoptReaderLock(tsa::Mutex *mu) REQUIRES_SHARED(mu) {
-    return MutexLocker(mu, adopt_lock, shared_lock);
-  }
   static MutexLocker DeferLock(tsa::Mutex *mu) EXCLUDES(mu) {
     return MutexLocker(mu, defer_lock);
   }
@@ -57,7 +41,7 @@ public:
   // There is no warning if the scope was already unlocked before.
   ~MutexLocker() RELEASE() {
     if (locked)
-      mut->GenericUnlock();
+      mut->Unlock();
   }
   // Acquire all associated mutexes exclusively.
   void Lock() ACQUIRE() {
@@ -66,6 +50,46 @@ public:
   }
   // Try to acquire all associated mutexes exclusively.
   bool TryLock() TRY_ACQUIRE(true) { return locked = mut->TryLock(); }
+  // Release all associated mutexes. Warn on double unlock.
+  void Unlock() RELEASE() {
+    mut->Unlock();
+    locked = false;
+  }
+};
+
+class SCOPED_CAPABILITY SharedMutexLocker {
+private:
+  tsa::SharedMutex *mut;
+  bool locked;
+
+public:
+  // Acquire mu in shared mode, implicitly acquire *this and associate it with
+  // mu.
+  SharedMutexLocker(tsa::SharedMutex *mu, shared_lock_t) ACQUIRE_SHARED(mu)
+      : mut(mu), locked(true) {
+    mu->ReaderLock();
+  }
+  // Assume mu is held in shared mode, implicitly acquire *this and associate it
+  // with mu.
+  SharedMutexLocker(tsa::SharedMutex *mu, adopt_lock_t, shared_lock_t)
+      REQUIRES_SHARED(mu)
+      : mut(mu), locked(true) {}
+  // Assume mu is not held, implicitly acquire *this and associate it with mu.
+  SharedMutexLocker(tsa::SharedMutex *mu, defer_lock_t) EXCLUDES(mu)
+      : mut(mu), locked(false) {}
+  static SharedMutexLocker ReaderLock(tsa::SharedMutex *mu) ACQUIRE_SHARED(mu) {
+    return SharedMutexLocker(mu, shared_lock);
+  }
+  static SharedMutexLocker AdoptReaderLock(tsa::SharedMutex *mu)
+      REQUIRES_SHARED(mu) {
+    return SharedMutexLocker(mu, adopt_lock, shared_lock);
+  }
+  // Release *this and all associated mutexes, if they are still held.
+  // There is no warning if the scope was already unlocked before.
+  ~SharedMutexLocker() RELEASE() {
+    if (locked)
+      mut->ReaderUnlock();
+  }
   // Acquire all associated mutexes in shared mode.
   void ReaderLock() ACQUIRE_SHARED() {
     mut->ReaderLock();
@@ -74,11 +98,6 @@ public:
   // Try to acquire all associated mutexes in shared mode.
   bool ReaderTryLock() TRY_ACQUIRE_SHARED(true) {
     return locked = mut->ReaderTryLock();
-  }
-  // Release all associated mutexes. Warn on double unlock.
-  void Unlock() RELEASE() {
-    mut->Unlock();
-    locked = false;
   }
   // Release all associated mutexes. Warn on double unlock.
   void ReaderUnlock() RELEASE() {

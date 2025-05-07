@@ -18,15 +18,14 @@ public:
   void Lock() ACQUIRE();
   // Release/unlock an exclusive mutex.
   void Unlock() RELEASE();
-  // Generic unlock, can unlock exclusive and shared mutexes.
-  void GenericUnlock() RELEASE_GENERIC();
   // Try to acquire the mutex. Returns true on success, and false on failure.
   bool TryLock() TRY_ACQUIRE(true);
   // Assert that this mutex is currently held by the calling thread.
-  // STL has no matching API for mutexes.
+  // STL has no matching API for mutexes, only std::unique_lock.
   // void AssertHeld() ASSERT_CAPABILITY(this);
   // For negative capabilities.
-  const Mutex &operator!() const { return *this; }
+  // STL has no matching API for mutexes.
+  // const Mutex &operator!() const { return *this; }
 };
 
 class CAPABILITY("shared_mutex") SharedMutex {

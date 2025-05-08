@@ -5,16 +5,15 @@ namespace tsa_example {
 class BankAccount {
 private:
   tsa::Mutex mu_;
-  int balance_ GUARDED_BY(mu_);
+  std::size_t balance_ GUARDED_BY(mu_);
 
-  void depositImpl(int amount);
-
-  void withdrawImpl(int amount);
+  void depositImpl(const std::size_t amount) REQUIRES(mu_);
+  void withdrawImpl(const std::size_t amount) REQUIRES(mu_);
 
 public:
-  void withdraw(int amount);
-
-  void transferFrom(BankAccount &b, int amount);
+  void withdraw(const std::size_t amount);
+  void deposit(const std::size_t amount);
+  void transferFrom(BankAccount &b, const std::size_t amount);
 };
 
 } // namespace tsa_example

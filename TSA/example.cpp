@@ -2,25 +2,25 @@
 
 namespace tsa_example {
 
-void BankAccount::depositImpl(int amount) {
-  balance += amount; // WARNING! Cannot write balance without locking mu.
+void BankAccount::depositImpl(const int amount) {
+  tsa::MutexLocker ml(&mu_);
+  balance_ += amount;
 }
 
-void BankAccount::withdrawImpl(int amount) REQUIRES(mu) {
-  balance -= amount; // OK. Caller must have locked mu.
+void BankAccount::withdrawImpl(const int amount) REQUIRES(mu_) {
+  balance_ -= amount;
 }
 
-void BankAccount::withdraw(int amount) {
-  mu.Lock();
-  withdrawImpl(amount); // OK.  We've locked mu.
-} // WARNING!  Failed to unlock mu.
+void BankAccount::withdraw(const int amount) {
+  tsa::MutexLocker ml(&mu_);
+  withdrawImpl(amount);
+}
 
-void BankAccount::transferFrom(BankAccount &b, int amount) {
-  mu.Lock();
-  b.withdrawImpl(
-      amount); // WARNING!  Calling withdrawImpl() requires locking b.mu.
-  depositImpl(amount); // OK.  depositImpl() has no requirements.
-  mu.Unlock();
+void BankAccount::transferFrom(BankAccount &b, const int amount) {
+  tsa::MutexLocker mla(&mu_);
+  tsa::MutexLocker mlb(&b.mu_);
+  b.withdrawImpl(amount);
+  depositImpl(amount);
 }
 
 } // namespace tsa_example

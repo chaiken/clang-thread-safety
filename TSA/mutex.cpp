@@ -10,7 +10,7 @@ bool Mutex::TryLock() { return mutex_.try_lock(); }
 
 void SharedMutex::ReaderLock() { shared_mutex_.lock_shared(); }
 
-void SharedMutex::ReaderLock() { shared_mutex_.unlock_shared(); }
+void SharedMutex::ReaderUnlock() { shared_mutex_.unlock_shared(); }
 
 bool SharedMutex::ReaderTryLock() { return shared_mutex_.try_lock_shared(); }
 

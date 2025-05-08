@@ -4,8 +4,8 @@ namespace tsa_example {
 
 class BankAccount {
 private:
-  tsa::Mutex mu;
-  int balance GUARDED_BY(mu);
+  tsa::Mutex mu_;
+  int balance_ GUARDED_BY(mu_);
 
   void depositImpl(int amount);
 

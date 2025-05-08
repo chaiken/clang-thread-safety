@@ -22,8 +22,7 @@ public:
     tsa::SharedMutexLocker sml(&smu_, lockt);
     return balance_;
   }
-  // TODO: fail if amount > balance_.
-  void withdraw(const std::size_t amount);
+  bool withdraw(const std::size_t amount);
   void deposit(const std::size_t amount);
   void transferFrom(BankAccount &b, const std::size_t amount);
 };
